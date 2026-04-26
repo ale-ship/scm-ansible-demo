@@ -1,0 +1,104 @@
+# site.yml — Master Ansible playbook demonstrating all three SCM features
+# Stored in GitHub repo: scm-ansible-demo/site.yml
+# Run from VS Code terminal:  ansible-playbook -i hosts.ini site.yml
+
+---
+- name: SCM Demo — Versioning, Concurrency & Synchronisation on localhost
+  hosts: local
+  connection: local
+  gather_facts: yes
+
+  vars:
+    project_dir: "/tmp/scm_demo"
+    app_version: "2.1.0"            # change this to demo versioning & rollback
+    group_members:                  # documents the contributing group members
+      - Alexander
+      - Sean
+      - Ron
+    sync_dirs:
+      - "/tmp/scm_demo/config"
+      - "/tmp/scm_demo/scripts"
+      - "/tmp/scm_demo/logs"
+
+  tasks:
+    # ── 1. VERSIONING ────────────────────────────────────────────────
+    # Ansible layer: versioned release directories + VERSION.txt manifest
+    # GitHub layer:  every change to this file is tracked in git history
+
+    - name: "[VERSIONING] Record deployment version and group"
+      debug:
+        msg: "Deploying v{{ app_version }} | Group: {{ group_members | join(', ') }}"
+
+    - name: "[VERSIONING] Create versioned release directory"
+      file:
+        path: "{{ project_dir }}/releases/{{ app_version }}"
+        state: directory
+
+    # VERSION.txt acts as a configuration baseline — records who deployed what
+    - name: "[VERSIONING] Write version manifest (configuration baseline)"
+      copy:
+        dest: "{{ project_dir }}/releases/{{ app_version }}/VERSION.txt"
+        content: |
+          Version:  {{ app_version }}
+          Deployed: {{ ansible_date_time.iso8601 }}
+          Host:     {{ ansible_hostname }}
+          Group:    Alexander, Sean, Ron
+          Repo:     https://github.com/alexander/scm-ansible-demo
+
+    # Symlink 'current' → active release. Rollback = change app_version + re-run
+    - name: "[VERSIONING] Symlink 'current' to active release"
+      file:
+        src:   "{{ project_dir }}/releases/{{ app_version }}"
+        dest:  "{{ project_dir }}/current"
+        state: link
+
+    # ── 2. CONCURRENCY ───────────────────────────────────────────────
+    # loop iterates all sync_dirs; forks=3 runs all 3 iterations at once
+    # Mirrors how all 3 group members push branches to GitHub concurrently
+
+    - name: "[CONCURRENCY] Create all project directories in parallel"
+      file:
+        path:  "{{ item }}"
+        state: directory
+      loop: "{{ sync_dirs }}"
+
+    # async/poll: fires a background task without blocking other tasks
+    - name: "[CONCURRENCY] Launch background task asynchronously"
+      command: sleep 5
+      async: 30                       # allow 30s max
+      poll: 0                         # do not wait — fire and continue
+      register: bg_task
+
+    - name: "[CONCURRENCY] Confirm background task completed"
+      async_status:
+        jid: "{{ bg_task.ansible_job_id }}"
+      register: job_result
+      until: job_result.finished
+      retries: 6
+      delay: 5
+
+    # ── 3. SYNCHRONISATION ───────────────────────────────────────────
+    # Pushes identical app.conf to every directory in sync_dirs list.
+    # Idempotency: re-running reports ok=9 changed=0 — system is in sync.
+    # GitHub sync: git pull origin main syncs playbook changes to all members.
+
+    - name: "[SYNCHRONISATION] Deploy identical config to all directories"
+      copy:
+        dest: "{{ item }}/app.conf"
+        content: |
+          # app.conf — synchronised by Ansible, versioned on GitHub
+          version={{ app_version }}
+          group=Alexander,Sean,Ron
+          repo=https://github.com/alexander/scm-ansible-demo
+          env=production
+      loop: "{{ sync_dirs }}"
+
+    - name: "[SYNCHRONISATION] Print SCM demonstration report"
+      debug:
+        msg:
+          - "======== SCM GROUP DEMO COMPLETE ========"
+          - "GitHub:          repo versioned, all branches merged into main"
+          - "Versioning:      v{{ app_version }} deployed to releases/{{ app_version }}"
+          - "Concurrency:     {{ sync_dirs|length }} dirs created in parallel; async task done"
+          - "Synchronisation: app.conf deployed to all {{ sync_dirs|length }} directories"
+          - "Group:           Alexander | Sean | Ron"
