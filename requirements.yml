@@ -1,0 +1,20 @@
+# requirements.yml — Versioned role dependencies
+# Stored in GitHub repo: scm-ansible-demo/requirements.yml
+
+# VERSIONING (Layer 1 — Ansible): each role is pinned to an exact version.
+# Every group member installs the same role versions — reproducible builds.
+# To roll back: change version number and re-run ansible-galaxy install -r.
+# VERSIONING (Layer 2 — GitHub): this file itself is tracked in git.
+# git log requirements.yml shows every version change ever made.
+# Install roles:  ansible-galaxy install -r requirements.yml
+
+---
+roles:
+  - name: geerlingguy.git           # role: installs and configures Git
+    version: "1.0.1"                # PINNED VERSION — locked for reproducibility
+
+  - name: geerlingguy.nodejs         # role: installs Node.js runtime
+    version: "6.1.0"                # PINNED VERSION — safe tested release
+
+# To upgrade a role: bump its version number, commit to GitHub, re-run install
+# To roll back:       revert the version number via git revert, re-run install
