@@ -11,7 +11,7 @@
 ---
 roles:
   - name: geerlingguy.git           # role: installs and configures Git
-    version: "1.0.1"                # PINNED VERSION — locked for reproducibility
+    version: "2.0.0"                # PINNED VERSION — locked for reproducibility
 
   - name: geerlingguy.nodejs         # role: installs Node.js runtime
     version: "6.1.0"                # PINNED VERSION — safe tested release
