@@ -6,7 +6,7 @@
 - name: SCM Demo — Versioning, Concurrency & Synchronisation on localhost
   hosts: local
   connection: local
-  gather_facts: yes
+  gather_facts: true
 
   vars:
     project_dir: "/tmp/scm_demo"
