@@ -43,7 +43,7 @@
           Deployed: {{ ansible_date_time.iso8601 }}
           Host:     {{ ansible_hostname }}
           Group:    Alexander, Sean, Ron
-          Repo:     https://github.com/alexander/scm-ansible-demo
+          Repo:     https://github.com/ale-ship/scm-ansible-demo
 
     # Symlink 'current' → active release. Rollback = change app_version + re-run
     - name: "[VERSIONING] Symlink 'current' to active release"
@@ -89,7 +89,7 @@
           # app.conf — synchronised by Ansible, versioned on GitHub
           version={{ app_version }}
           group=Alexander,Sean,Ron
-          repo=https://github.com/alexander/scm-ansible-demo
+          repo=https://github.com/ale-ship/scm-ansible-demo
           env=production
       loop: "{{ sync_dirs }}"
 
